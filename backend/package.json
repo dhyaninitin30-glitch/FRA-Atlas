@@ -1,0 +1,20 @@
+{
+  "name": "fra-atlas-backend",
+  "version": "2.0.0",
+  "description": "FRA Atlas Backend Server - Professional Modular Architecture",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "start:old": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
+    "twilio": "^5.10.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

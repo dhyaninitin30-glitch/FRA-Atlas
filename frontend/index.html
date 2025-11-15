@@ -1,0 +1,2637 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FRA Atlas & Decision Support System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/chatbot.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body>
+    <!-- Global Loader -->
+    <div id="globalLoader" class="global-loader" style="display: none;">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i data-lucide="menu"></i>
+            </button>
+            <h1 class="header-title">Ministry of Tribal Affairs – FRA Atlas v2.0</h1>
+        </div>
+        <div class="header-right">
+            <!-- Notifications -->
+            <div class="notification-center">
+                <div class="notification-bell" onclick="toggleNotifications()">
+                    <i data-lucide="bell"></i>
+                    <span class="notification-badge" id="notificationCount">0</span>
+                </div>
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <h4>Notifications</h4>
+                        <div class="notification-actions">
+                            <button class="mark-all-read" onclick="markAllNotificationsRead()">
+                                <i data-lucide="check-check"></i>
+                                Mark All Read
+                            </button>
+                            <button class="close-notifications" onclick="toggleNotifications()">
+                                <i data-lucide="x"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="notification-list" id="notificationList">
+                        <div class="no-notifications">
+                            <i data-lucide="bell-off"></i>
+                            <p>No new notifications</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="user-info">
+                <select id="roleSelector" class="role-selector-dropdown" onchange="updateRoleBasedNav()">
+                    <option value="user">User (Citizen)</option>
+                    <option value="district" selected>District Officer</option>
+                    <option value="state">State Officer</option>
+                </select>
+                <span class="role-badge" id="roleBadge">District Officer</span>
+                <div class="user-avatar">
+                    <i data-lucide="user"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <nav class="sidebar-nav">
+            <ul class="nav-menu">
+                <li class="nav-item" data-section="dashboard">
+                    <a href="#dashboard" class="nav-link active" data-page="dashboard">
+                        <i data-lucide="layout-dashboard"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="map">
+                    <a href="#map" class="nav-link" data-page="map">
+                        <i data-lucide="map"></i>
+                        <span>Map</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="claims">
+                    <a href="#claims" class="nav-link" data-page="claims">
+                        <i data-lucide="file-text"></i>
+                        <span>Claims</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="review" data-roles="district,state,admin">
+                    <a href="#review" class="nav-link" data-page="review">
+                        <i data-lucide="search"></i>
+                        <span>Review</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="assets">
+                    <a href="#assets" class="nav-link" data-page="assets">
+                        <i data-lucide="database"></i>
+                        <span>Assets</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="feedback">
+                    <a href="#feedback" class="nav-link" data-page="feedback">
+                        <i data-lucide="message-circle"></i>
+                        <span>Feedback</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="issues">
+                    <a href="#issues" class="nav-link" data-page="issues">
+                        <i data-lucide="alert-triangle"></i>
+                        <span>Issues</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="admin">
+                    <a href="#admin" class="nav-link" data-page="admin">
+                        <i data-lucide="settings"></i>
+                        <span>Admin</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="dss">
+                    <a href="#dss" class="nav-link" data-page="dss">
+                        <i data-lucide="brain"></i>
+                        <span>DSS</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-section="reports" data-roles="district,state,admin">
+                    <a href="#reports" class="nav-link" data-page="reports">
+                        <i data-lucide="bar-chart-3"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <p>FRA Atlas v2.0 | Government of India | Ministry of Tribal Affairs</p>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <div class="page-content" id="pageContent">
+            <!-- Dashboard Page (Default) -->
+            <div class="page active" id="dashboard-page">
+                <div class="dashboard-header">
+                    <h1 class="dashboard-title">FRA Claim Monitoring Dashboard</h1>
+                    <p class="dashboard-subtitle">Real-time Analytics & Progress Overview</p>
+                </div>
+
+                <div class="dashboard-layout">
+                    <!-- Main Content Area -->
+                    <div class="dashboard-main">
+                        <!-- KPI Cards -->
+                        <div class="kpi-grid">
+                            <div class="kpi-card total">
+                                <div class="kpi-icon">
+                                    <i data-lucide="file-text"></i>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-number" id="totalClaims">10,000</div>
+                                    <div class="kpi-label">Total Claims Filed</div>
+                                    <div class="kpi-trend up">
+                                        <i data-lucide="trending-up"></i>
+                                        <span>+12% vs last month</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="kpi-card approved">
+                                <div class="kpi-icon">
+                                    <i data-lucide="check-circle"></i>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-number" id="approvedClaims">5,000</div>
+                                    <div class="kpi-label">Approved Claims</div>
+                                    <div class="kpi-trend up">
+                                        <i data-lucide="trending-up"></i>
+                                        <span>+8% vs last month</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="kpi-card pending">
+                                <div class="kpi-icon">
+                                    <i data-lucide="clock"></i>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-number" id="pendingClaims">4,000</div>
+                                    <div class="kpi-label">Pending Claims</div>
+                                    <div class="kpi-trend down">
+                                        <i data-lucide="trending-down"></i>
+                                        <span>-5% vs last month</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="kpi-card rejected">
+                                <div class="kpi-icon">
+                                    <i data-lucide="x-circle"></i>
+                                </div>
+                                <div class="kpi-content">
+                                    <div class="kpi-number" id="rejectedClaims">1,000</div>
+                                    <div class="kpi-label">Rejected Claims</div>
+                                    <div class="kpi-trend up">
+                                        <i data-lucide="trending-up"></i>
+                                        <span>+3% vs last month</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Section -->
+                        <div class="charts-grid">
+                            <div class="chart-card">
+                                <h3>Monthly FRA Approvals (2025)</h3>
+                                <canvas id="monthlyApprovalsChart"></canvas>
+                            </div>
+                            <div class="chart-card">
+                                <h3>AI Verification Accuracy Trend</h3>
+                                <canvas id="accuracyTrendChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Recent Claims Table -->
+                        <div class="table-card">
+                            <h3>Recent Claims</h3>
+                            <div class="table-container">
+                                <table class="claims-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Claim ID</th>
+                                            <th>Applicant Name</th>
+                                            <th>Village</th>
+                                            <th>AI Score (%)</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="claimsTableBody">
+                                        <!-- Table rows will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Insights Sidebar -->
+                    <div class="dashboard-sidebar">
+                        <div class="insight-card">
+                            <h4>Key Metrics</h4>
+                            <div class="metric-item">
+                                <span class="metric-label">Average Processing Time</span>
+                                <span class="metric-value">45 days</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Total Beneficiaries</span>
+                                <span class="metric-value">8,500</span>
+                            </div>
+                        </div>
+
+                        <div class="insight-card">
+                            <h4>Claims Distribution</h4>
+                            <div class="donut-container">
+                                <canvas id="distributionChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="insight-card">
+                            <h4>Quick Actions</h4>
+                            <button class="action-btn primary" onclick="generateDashboardReport()">
+                                <i data-lucide="file-text"></i>
+                                Generate Report
+                            </button>
+                            <button class="action-btn secondary" onclick="exportDashboardData()">
+                                <i data-lucide="download"></i>
+                                Export Data
+                            </button>
+                            <button class="action-btn secondary" onclick="viewDashboardAnalytics()">
+                                <i data-lucide="bar-chart-3"></i>
+                                View Analytics
+                            </button>
+                            <div class="last-action" id="lastAction"
+                                style="margin-top: 10px; font-size: 11px; color: #666; text-align: center;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Page -->
+            <div class="page" id="map-page">
+                <div class="map-header">
+                    <h1 class="map-title">Integrated FRA Atlas (Map View)</h1>
+                    <p class="map-subtitle">Visualizing Claims, Assets and Schemes in Real Time</p>
+
+                    <!-- Filters and Search -->
+                    <div class="map-controls">
+                        <!-- Draw New Claim Button (Role-based) -->
+                        <div class="draw-claim-section" id="drawClaimSection" style="display: none;">
+                            <button class="btn-draw-claim" id="btnDrawClaim" onclick="enableDrawingMode()">
+                                <i data-lucide="pen-tool"></i>
+                                <span>Draw New Claim</span>
+                            </button>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <select id="stateFilter" class="filter-select">
+                                <option value="">All States</option>
+                                <option value="jharkhand">Jharkhand</option>
+                                <option value="odisha">Odisha</option>
+                                <option value="chhattisgarh">Chhattisgarh</option>
+                                <option value="madhya-pradesh">Madhya Pradesh</option>
+                            </select>
+                            <select id="districtFilter" class="filter-select">
+                                <option value="">All Districts</option>
+                                <optgroup label="Jharkhand">
+                                    <option value="ranchi">Ranchi</option>
+                                    <option value="dhanbad">Dhanbad</option>
+                                    <option value="hazaribagh">Hazaribagh</option>
+                                    <option value="koderma">Koderma</option>
+                                </optgroup>
+                                <optgroup label="Madhya Pradesh">
+                                    <option value="bhopal">Bhopal</option>
+                                    <option value="sehore">Sehore</option>
+                                    <option value="betul">Betul</option>
+                                    <option value="chhindwara">Chhindwara</option>
+                                    <option value="mandla">Mandla</option>
+                                    <option value="dindori">Dindori</option>
+                                </optgroup>
+                            </select>
+                            <select id="villageFilter" class="filter-select">
+                                <option value="">All Villages</option>
+                                <optgroup label="Jharkhand">
+                                    <option value="jharia" data-lat="23.7461" data-lng="86.4139">Jharia (Dhanbad)</option>
+                                    <option value="koderma" data-lat="24.4670" data-lng="85.5950">Koderma</option>
+                                    <option value="hazaribagh" data-lat="23.9929" data-lng="85.3615">Hazaribagh</option>
+                                </optgroup>
+                                <optgroup label="Madhya Pradesh - Bhopal">
+                                    <option value="berasia" data-lat="23.547" data-lng="77.433">Berasia</option>
+                                    <option value="kolar" data-lat="23.120" data-lng="77.430">Kolar</option>
+                                </optgroup>
+                                <optgroup label="Madhya Pradesh - Sehore">
+                                    <option value="ashta" data-lat="23.010" data-lng="77.100">Ashta</option>
+                                </optgroup>
+                                <optgroup label="Madhya Pradesh - Betul">
+                                    <option value="athner" data-lat="21.700" data-lng="77.940">Athner</option>
+                                </optgroup>
+                                <optgroup label="Madhya Pradesh - Mandla">
+                                    <option value="bichhiya" data-lat="22.100" data-lng="80.640">Bichhiya</option>
+                                </optgroup>
+                                <optgroup label="Madhya Pradesh - Dindori">
+                                    <option value="samnapur" data-lat="22.910" data-lng="81.080">Samnapur</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="search-group">
+                            <div class="search-box">
+                                <i data-lucide="search"></i>
+                                <input type="text" id="mapSearch" placeholder="Search by Claim ID or Applicant Name">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="map-layout">
+                    <!-- Layer Control Panel -->
+                    <div class="map-sidebar">
+                        <div class="layer-panel">
+                            <h3>Map Layers</h3>
+                            <div class="layer-controls">
+                                <div class="layer-item">
+                                    <label class="layer-toggle">
+                                        <input type="checkbox" id="claimsLayer" checked>
+                                        <span class="toggle-slider"></span>
+                                        <span class="layer-label">
+                                            <i data-lucide="map-pin"></i>
+                                            FRA Claims
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="layer-item">
+                                    <label class="layer-toggle">
+                                        <input type="checkbox" id="forestLayer">
+                                        <span class="toggle-slider"></span>
+                                        <span class="layer-label">
+                                            <i data-lucide="trees"></i>
+                                            Forest Cover
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="layer-item">
+                                    <label class="layer-toggle">
+                                        <input type="checkbox" id="waterLayer">
+                                        <span class="toggle-slider"></span>
+                                        <span class="layer-label">
+                                            <i data-lucide="waves"></i>
+                                            Water Bodies
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="layer-item">
+                                    <label class="layer-toggle">
+                                        <input type="checkbox" id="landUseLayer">
+                                        <span class="toggle-slider"></span>
+                                        <span class="layer-label">
+                                            <i data-lucide="mountain"></i>
+                                            Land Use
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="layer-item">
+                                    <label class="layer-toggle">
+                                        <input type="checkbox" id="infrastructureLayer">
+                                        <span class="toggle-slider"></span>
+                                        <span class="layer-label">
+                                            <i data-lucide="map"></i>
+                                            Infrastructure
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="legend-panel">
+                            <h4>Claims Legend</h4>
+                            <div class="legend-items">
+                                <div class="legend-item">
+                                    <span class="legend-color approved"></span>
+                                    <span>Approved Claims</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color pending"></span>
+                                    <span>Pending Claims</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color rejected"></span>
+                                    <span>Rejected Claims</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Map Container -->
+                    <div class="map-main">
+                        <div id="mapContainer" class="map-container"></div>
+                    </div>
+
+                    <!-- Info Panel -->
+                    <div class="map-info-panel">
+                        <div class="info-card">
+                            <h4>Map Summary</h4>
+                            <div class="info-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Total Claims Visible</span>
+                                    <span class="stat-value" id="visibleClaims">20</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Approved %</span>
+                                    <span class="stat-value" id="approvedPercent">65%</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Average AI Score</span>
+                                    <span class="stat-value" id="avgAiScore">84%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="info-card">
+                            <h4>Claim Types</h4>
+                            <div class="chart-container">
+                                <canvas id="claimTypesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="info-card">
+                            <h4>Quick Actions</h4>
+                            <button class="map-action-btn primary">Export Map</button>
+                            <button class="map-action-btn secondary">Generate Report</button>
+                            <button class="map-action-btn secondary">Print View</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Control Panel Page -->
+            <div class="page" id="admin-page">
+                <div class="admin-header">
+                    <div class="admin-title-section">
+                        <h1 class="admin-title">Administrative Control Center</h1>
+                        <p class="admin-subtitle">Manage Users • Roles • System Logs • Audit Records</p>
+                    </div>
+                    <button class="add-user-btn" onclick="openAddUserForm()">
+                        <i data-lucide="user-plus"></i>
+                        Add New User
+                    </button>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="admin-summary">
+                    <div class="admin-summary-card total">
+                        <div class="admin-summary-icon">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <div class="admin-summary-content">
+                            <div class="admin-summary-number" id="totalUsers">127</div>
+                            <div class="admin-summary-label">Total Users</div>
+                        </div>
+                    </div>
+                    <div class="admin-summary-card citizens">
+                        <div class="admin-summary-icon">
+                            <i data-lucide="user"></i>
+                        </div>
+                        <div class="admin-summary-content">
+                            <div class="admin-summary-number" id="citizenUsers">95</div>
+                            <div class="admin-summary-label">Citizens</div>
+                        </div>
+                    </div>
+                    <div class="admin-summary-card district">
+                        <div class="admin-summary-icon">
+                            <i data-lucide="briefcase"></i>
+                        </div>
+                        <div class="admin-summary-content">
+                            <div class="admin-summary-number" id="districtOfficers">18</div>
+                            <div class="admin-summary-label">District Officers</div>
+                        </div>
+                    </div>
+                    <div class="admin-summary-card state">
+                        <div class="admin-summary-icon">
+                            <i data-lucide="shield"></i>
+                        </div>
+                        <div class="admin-summary-content">
+                            <div class="admin-summary-number" id="stateOfficers">12</div>
+                            <div class="admin-summary-label">State Officers</div>
+                        </div>
+                    </div>
+                    <div class="admin-summary-card admins">
+                        <div class="admin-summary-icon">
+                            <i data-lucide="crown"></i>
+                        </div>
+                        <div class="admin-summary-content">
+                            <div class="admin-summary-number" id="adminUsers">2</div>
+                            <div class="admin-summary-label">Admins</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notification Banner -->
+                <div class="admin-notification-banner">
+                    <i data-lucide="bell"></i>
+                    <span>🔔 4 users require role review this month</span>
+                </div>
+
+                <!-- User Management Section -->
+                <div class="admin-section">
+                    <h3>User Management</h3>
+
+                    <!-- Filters -->
+                    <div class="admin-controls">
+                        <div class="admin-filter-section">
+                            <select id="adminRoleFilter" class="admin-filter">
+                                <option value="">All Roles</option>
+                                <option value="citizen">Citizen</option>
+                                <option value="district">District Officer</option>
+                                <option value="state">State Officer</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <select id="adminDistrictFilter" class="admin-filter">
+                                <option value="">All Districts</option>
+                                <option value="ranchi">Ranchi</option>
+                                <option value="dhanbad">Dhanbad</option>
+                                <option value="hazaribagh">Hazaribagh</option>
+                                <option value="koderma">Koderma</option>
+                            </select>
+                            <select id="adminStatusFilter" class="admin-filter">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                            <input type="text" id="adminSearch" class="admin-search"
+                                placeholder="Search by name or email...">
+                        </div>
+                    </div>
+
+                    <!-- Users Table -->
+                    <div class="admin-table-section">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersTableBody">
+                                <!-- Table rows will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Role & Permission Matrix -->
+                <div class="admin-section">
+                    <h3>Role & Permission Matrix</h3>
+                    <div class="permission-matrix">
+                        <table class="permission-table">
+                            <thead>
+                                <tr>
+                                    <th>Module</th>
+                                    <th>Citizen</th>
+                                    <th>District Officer</th>
+                                    <th>State Officer</th>
+                                    <th>Admin</th>
+                                </tr>
+                            </thead>
+                            <tbody id="permissionMatrixBody">
+                                <!-- Permission rows will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="permission-actions">
+                        <button class="admin-btn primary" onclick="savePermissions()">Save Permissions</button>
+                    </div>
+                </div>
+
+                <!-- System Activity Logs -->
+                <div class="admin-section">
+                    <h3>System Activity Logs / Audit Trail</h3>
+
+                    <!-- Log Filters -->
+                    <div class="admin-controls">
+                        <div class="admin-filter-section">
+                            <input type="date" id="logStartDate" class="admin-filter">
+                            <input type="date" id="logEndDate" class="admin-filter">
+                            <select id="logUserRoleFilter" class="admin-filter">
+                                <option value="">All Roles</option>
+                                <option value="citizen">Citizen</option>
+                                <option value="district">District Officer</option>
+                                <option value="state">State Officer</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="admin-export-section">
+                            <button class="admin-export-btn" onclick="exportActivityLogs()">
+                                <i data-lucide="download"></i>
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Activity Logs Table -->
+                    <div class="admin-table-section">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Log ID</th>
+                                    <th>User</th>
+                                    <th>Action Performed</th>
+                                    <th>Module</th>
+                                    <th>Timestamp</th>
+                                    <th>IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activityLogsTableBody">
+                                <!-- Log rows will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Data Monitoring Analytics -->
+                <div class="admin-analytics">
+                    <div class="admin-analytics-card">
+                        <h4>System Health</h4>
+                        <div class="system-health">
+                            <div class="health-indicator stable">
+                                <i data-lucide="check-circle"></i>
+                                <span>System Stable</span>
+                            </div>
+                            <div class="health-stats">
+                                <div class="health-stat">
+                                    <span class="health-label">Uptime</span>
+                                    <span class="health-value">99.8%</span>
+                                </div>
+                                <div class="health-stat">
+                                    <span class="health-label">Response Time</span>
+                                    <span class="health-value">245ms</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="admin-analytics-card">
+                        <h4>Actions per Module (This Week)</h4>
+                        <canvas id="actionsPerModuleChart"></canvas>
+                    </div>
+                    <div class="admin-analytics-card">
+                        <h4>Key Metrics</h4>
+                        <div class="key-metrics">
+                            <div class="metric-item">
+                                <span class="metric-label">Total Claims vs Active Users</span>
+                                <span class="metric-value">56 / 127</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Average Review Time</span>
+                                <span class="metric-value">3.2 days</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Feedback Resolution Rate</span>
+                                <span class="metric-value">82%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Decision Support System Page -->
+            <div class="page" id="dss-page">
+                <div class="dss-header">
+                    <div class="dss-title-section">
+                        <h1 class="dss-title">AI-Powered Decision Support System (DSS)</h1>
+                        <p class="dss-subtitle">Smart Recommendations for Scheme Layering & Rural Development</p>
+                    </div>
+                    <div class="dss-view-toggle">
+                        <button class="dss-toggle-btn active" id="districtDSSBtn"
+                            onclick="switchDSSView('district')">District View</button>
+                        <button class="dss-toggle-btn" id="stateDSSBtn" onclick="switchDSSView('state')">State
+                            View</button>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="dss-summary">
+                    <div class="dss-summary-card">
+                        <div class="dss-summary-icon">
+                            <i data-lucide="check-circle"></i>
+                        </div>
+                        <div class="dss-summary-content">
+                            <div class="dss-summary-number" id="verifiedClaims">45</div>
+                            <div class="dss-summary-label">Total Verified Claims</div>
+                        </div>
+                    </div>
+                    <div class="dss-summary-card">
+                        <div class="dss-summary-icon">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="dss-summary-content">
+                            <div class="dss-summary-number" id="villagesMapped">28</div>
+                            <div class="dss-summary-label">Total Villages Mapped</div>
+                        </div>
+                    </div>
+                    <div class="dss-summary-card">
+                        <div class="dss-summary-icon">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <div class="dss-summary-content">
+                            <div class="dss-summary-number" id="eligibleBeneficiaries">8,500</div>
+                            <div class="dss-summary-label">Beneficiaries Eligible</div>
+                        </div>
+                    </div>
+                    <div class="dss-summary-card">
+                        <div class="dss-summary-icon">
+                            <i data-lucide="trending-up"></i>
+                        </div>
+                        <div class="dss-summary-content">
+                            <div class="dss-summary-number" id="developmentCoverage">78%</div>
+                            <div class="dss-summary-label">Development Coverage</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="dss-controls">
+                    <div class="dss-filter-section">
+                        <select id="dssStateFilter" class="dss-filter">
+                            <option value="">All States</option>
+                            <option value="jharkhand">Jharkhand</option>
+                            <option value="odisha">Odisha</option>
+                            <option value="chhattisgarh">Chhattisgarh</option>
+                        </select>
+                        <select id="dssDistrictFilter" class="dss-filter">
+                            <option value="">All Districts</option>
+                            <option value="ranchi">Ranchi</option>
+                            <option value="dhanbad">Dhanbad</option>
+                            <option value="hazaribagh">Hazaribagh</option>
+                        </select>
+                        <select id="dssVillageFilter" class="dss-filter">
+                            <option value="">All Villages</option>
+                            <option value="jharia">Jharia</option>
+                            <option value="koderma">Koderma</option>
+                        </select>
+                        <select id="dssSchemeFilter" class="dss-filter">
+                            <option value="">All Scheme Types</option>
+                            <option value="pm-kisan">PM-KISAN</option>
+                            <option value="jal-jeevan">Jal Jeevan Mission</option>
+                            <option value="mgnrega">MGNREGA</option>
+                            <option value="green-india">Green India Mission</option>
+                        </select>
+                    </div>
+                    <button class="dss-report-btn" onclick="generateDSSReport()">
+                        <i data-lucide="file-text"></i>
+                        Generate Report (PDF)
+                    </button>
+                </div>
+
+                <!-- Main Content Layout -->
+                <div class="dss-layout">
+                    <!-- Recommendations Section -->
+                    <div class="dss-main">
+                        <!-- AI Recommendation Cards -->
+                        <div class="dss-section">
+                            <h3>AI Scheme Recommendations</h3>
+                            <div class="scheme-cards" id="schemeCards">
+                                <!-- Scheme cards will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Recommendation Table -->
+                        <div class="dss-section">
+                            <h3>Detailed Recommendations</h3>
+                            <div class="dss-table-section">
+                                <table class="dss-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Claim ID</th>
+                                            <th>Village</th>
+                                            <th>AI Score</th>
+                                            <th>Recommended Schemes</th>
+                                            <th>Priority</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dssRecommendationsBody">
+                                        <!-- Table rows will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Sidebar -->
+                    <div class="dss-sidebar">
+                        <!-- AI Insights Panel -->
+                        <div class="dss-insight-card">
+                            <h4>AI Insights</h4>
+                            <div class="insight-metrics">
+                                <div class="insight-metric">
+                                    <span class="insight-label">Average AI Confidence</span>
+                                    <div class="insight-progress">
+                                        <div class="insight-progress-bar" style="width: 93%"></div>
+                                    </div>
+                                    <span class="insight-value">93%</span>
+                                </div>
+                                <div class="insight-metric">
+                                    <span class="insight-label">Projected Impact</span>
+                                    <div class="insight-progress">
+                                        <div class="insight-progress-bar" style="width: 85%"></div>
+                                    </div>
+                                    <span class="insight-value">2M Beneficiaries/Year</span>
+                                </div>
+                                <div class="insight-metric">
+                                    <span class="insight-label">Processing Time Reduction</span>
+                                    <div class="insight-progress">
+                                        <div class="insight-progress-bar" style="width: 90%"></div>
+                                    </div>
+                                    <span class="insight-value">3 months → 3 weeks</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DSS Map -->
+                        <div class="dss-map-card">
+                            <h4>Scheme Distribution Map</h4>
+                            <div id="dssMapContainer" class="dss-map"></div>
+                            <div class="dss-map-legend">
+                                <div class="legend-item"><span class="legend-dot pm-kisan"></span>PM-KISAN</div>
+                                <div class="legend-item"><span class="legend-dot jal-jeevan"></span>Jal Jeevan</div>
+                                <div class="legend-item"><span class="legend-dot mgnrega"></span>MGNREGA</div>
+                                <div class="legend-item"><span class="legend-dot green-india"></span>Green India</div>
+                            </div>
+                        </div>
+
+                        <!-- Scheme Distribution Chart -->
+                        <div class="dss-chart-card">
+                            <h4>Scheme Distribution</h4>
+                            <canvas id="schemeDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DSS Recommendations Container -->
+                <div id="dssRecommendations" class="dss-recommendations-container">
+                    <!-- Recommendations will be populated by JavaScript -->
+                </div>
+
+                <!-- DSS Action Panel -->
+                <div class="dss-action-panel">
+                    <h3>🤖 AI Analysis Tools</h3>
+                    <div class="dss-actions">
+                        <button class="btn primary" onclick="runDSSAnalysis(1)">
+                            <i data-lucide="brain"></i>
+                            Analyze Sample Claim
+                        </button>
+                        <button class="btn secondary" onclick="loadClaimsFromAPI()">
+                            <i data-lucide="refresh-cw"></i>
+                            Refresh Data
+                        </button>
+                        <button class="btn secondary"
+                            onclick="generateCustomReportAPI({report_type: 'dss_analysis', title: 'DSS Analysis Report'})">
+                            <i data-lucide="download"></i>
+                            Export Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports & Analytics Dashboard Page -->
+            <div class="page" id="reports-page">
+                <div class="reports-header">
+                    <div class="reports-title-section">
+                        <h1 class="reports-title">Reports & Performance Analytics</h1>
+                        <p class="reports-subtitle">Real-time Insights on FRA Implementation & Scheme Integration</p>
+                    </div>
+                </div>
+
+                <!-- Quick Filters -->
+                <div class="reports-filters">
+                    <input type="date" id="reportsStartDate" class="reports-filter" placeholder="Start Date">
+                    <input type="date" id="reportsEndDate" class="reports-filter" placeholder="End Date">
+                    <select id="reportsStateFilter" class="reports-filter">
+                        <option value="">All States</option>
+                        <option value="jharkhand">Jharkhand</option>
+                        <option value="odisha">Odisha</option>
+                        <option value="chhattisgarh">Chhattisgarh</option>
+                        <option value="madhya-pradesh">Madhya Pradesh</option>
+                    </select>
+                    <select id="reportsDistrictFilter" class="reports-filter">
+                        <option value="">All Districts</option>
+                        <option value="ranchi">Ranchi</option>
+                        <option value="dhanbad">Dhanbad</option>
+                    </select>
+                    <select id="reportsSchemeFilter" class="reports-filter">
+                        <option value="">All Schemes</option>
+                        <option value="pm-kisan">PM-KISAN</option>
+                        <option value="jal-jeevan">Jal Jeevan</option>
+                        <option value="mgnrega">MGNREGA</option>
+                    </select>
+                    <select id="reportsFormatFilter" class="reports-filter">
+                        <option value="pdf">PDF</option>
+                        <option value="xls">Excel</option>
+                    </select>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="reports-summary">
+                    <div class="reports-summary-card">
+                        <div class="reports-summary-icon">
+                            <i data-lucide="file-check"></i>
+                        </div>
+                        <div class="reports-summary-content">
+                            <div class="reports-summary-number">10,245</div>
+                            <div class="reports-summary-label">Total Claims Processed</div>
+                            <div class="reports-summary-trend up">
+                                <i data-lucide="trending-up"></i>
+                                <span>+12% vs last month</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reports-summary-card">
+                        <div class="reports-summary-icon">
+                            <i data-lucide="clock"></i>
+                        </div>
+                        <div class="reports-summary-content">
+                            <div class="reports-summary-number">3.2</div>
+                            <div class="reports-summary-label">Avg. Processing Time (days)</div>
+                            <div class="reports-summary-trend down">
+                                <i data-lucide="trending-down"></i>
+                                <span>-18% vs last month</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reports-summary-card">
+                        <div class="reports-summary-icon">
+                            <i data-lucide="users"></i>
+                        </div>
+                        <div class="reports-summary-content">
+                            <div class="reports-summary-number">8,500</div>
+                            <div class="reports-summary-label">Beneficiaries Linked</div>
+                            <div class="reports-summary-trend up">
+                                <i data-lucide="trending-up"></i>
+                                <span>+25% vs last month</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reports-summary-card">
+                        <div class="reports-summary-icon">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <div class="reports-summary-content">
+                            <div class="reports-summary-number">156</div>
+                            <div class="reports-summary-label">Active Villages</div>
+                            <div class="reports-summary-trend up">
+                                <i data-lucide="trending-up"></i>
+                                <span>+8% vs last month</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visual Analytics Section -->
+                <div class="reports-analytics">
+                    <div class="reports-chart-card large">
+                        <h4>Claims Status by District</h4>
+                        <canvas id="claimsStatusChart"></canvas>
+                    </div>
+                    <div class="reports-chart-card">
+                        <h4>Scheme Distribution</h4>
+                        <canvas id="schemeDistChart"></canvas>
+                    </div>
+                    <div class="reports-chart-card large">
+                        <h4>Monthly Growth of Verified Claims (2025)</h4>
+                        <canvas id="monthlyGrowthChart"></canvas>
+                    </div>
+                    <div class="reports-chart-card">
+                        <h4>FRA Progress Heat Map</h4>
+                        <div id="reportsHeatMap" class="reports-heat-map"></div>
+                    </div>
+                </div>
+
+                <!-- Report Builder & Insights -->
+                <div class="reports-builder-section">
+                    <div class="report-builder-card">
+                        <h3>Generate Custom Report</h3>
+                        <div class="report-builder-form">
+                            <div class="report-form-group">
+                                <label>Report Type</label>
+                                <select id="reportType" class="report-input">
+                                    <option value="district">District Report</option>
+                                    <option value="state">State Report</option>
+                                    <option value="national">National Report</option>
+                                </select>
+                            </div>
+                            <div class="report-form-group">
+                                <label>Select Modules</label>
+                                <div class="report-checkboxes">
+                                    <label><input type="checkbox" checked> Dashboard</label>
+                                    <label><input type="checkbox" checked> DSS</label>
+                                    <label><input type="checkbox"> Assets</label>
+                                    <label><input type="checkbox"> Feedback</label>
+                                    <label><input type="checkbox"> Issues</label>
+                                </div>
+                            </div>
+                            <div class="report-form-group">
+                                <label>Date Range</label>
+                                <div class="report-date-range">
+                                    <input type="date" id="reportStartDate" class="report-input" value="2025-01-01">
+                                    <span>to</span>
+                                    <input type="date" id="reportEndDate" class="report-input" value="2025-01-31">
+                                </div>
+                            </div>
+                            <div class="report-actions">
+                                <button class="report-btn secondary" onclick="previewReport()">Preview Report</button>
+                                <button class="report-btn primary" onclick="downloadPDFDirect()">
+                                    <i data-lucide="file-text"></i> Download PDF
+                                </button>
+                                <button class="report-btn primary" onclick="downloadExcelDirect()">
+                                    <i data-lucide="file-spreadsheet"></i> Download Excel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="insights-card">
+                        <h3>Automated Insights</h3>
+                        <div class="insights-list">
+                            <div class="insight-item">
+                                <i data-lucide="trending-up"></i>
+                                <p>Approval rate in Odisha increased by <strong>12%</strong> this quarter.</p>
+                            </div>
+                            <div class="insight-item">
+                                <i data-lucide="award"></i>
+                                <p>Tripura shows highest scheme linkage (<strong>82%</strong> of eligible claims).</p>
+                            </div>
+                            <div class="insight-item">
+                                <i data-lucide="alert-circle"></i>
+                                <p>Madhya Pradesh needs focus on pending CFR claims (approx. <strong>40%</strong>).</p>
+                            </div>
+                            <div class="insight-item">
+                                <i data-lucide="check-circle"></i>
+                                <p>Average processing time reduced from <strong>45 days to 3.2 days</strong> with AI.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Tables -->
+                <div class="reports-tables">
+                    <div class="reports-table-card">
+                        <h3>District-wise Performance</h3>
+                        <table class="reports-table">
+                            <thead>
+                                <tr>
+                                    <th>District</th>
+                                    <th>Claims Filed</th>
+                                    <th>Approved</th>
+                                    <th>Pending</th>
+                                    <th>Avg. Days</th>
+                                </tr>
+                            </thead>
+                            <tbody id="districtPerformanceBody">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="reports-table-card">
+                        <h3>Scheme Impact Summary</h3>
+                        <table class="reports-table">
+                            <thead>
+                                <tr>
+                                    <th>Scheme Name</th>
+                                    <th>Beneficiaries</th>
+                                    <th>Budget Used (₹)</th>
+                                    <th>Coverage %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schemeImpactBody">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Export Actions -->
+                <div class="reports-export-section">
+                    <button class="reports-export-btn primary" onclick="generateComprehensiveReport()">
+                        <i data-lucide="file-text"></i>
+                        Generate Comprehensive Report
+                    </button>
+                    <button class="reports-export-btn secondary" onclick="shareReport()">
+                        <i data-lucide="share-2"></i>
+                        Share to Email / Drive
+                    </button>
+                    <button class="reports-export-btn secondary" onclick="scheduleReport()">
+                        <i data-lucide="calendar"></i>
+                        Schedule Weekly Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- Issues Tracker Page -->
+            <div class="page" id="issues-page">
+                <div class="issues-header">
+                    <div class="issues-title-section">
+                        <h1 class="issues-title">FRA Internal Issues Monitor</h1>
+                        <p class="issues-subtitle">Track Technical & Administrative Challenges in Real Time</p>
+                    </div>
+                    <button class="new-issue-btn" onclick="openNewIssueForm()">
+                        <i data-lucide="plus"></i>
+                        Report New Issue
+                    </button>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="issues-summary">
+                    <div class="issue-summary-card total">
+                        <div class="issue-summary-icon">
+                            <i data-lucide="alert-circle"></i>
+                        </div>
+                        <div class="issue-summary-content">
+                            <div class="issue-summary-number" id="totalIssues">56</div>
+                            <div class="issue-summary-label">Total Issues</div>
+                        </div>
+                    </div>
+                    <div class="issue-summary-card open">
+                        <div class="issue-summary-icon">
+                            <i data-lucide="circle"></i>
+                        </div>
+                        <div class="issue-summary-content">
+                            <div class="issue-summary-number" id="openIssues">12</div>
+                            <div class="issue-summary-label">Open</div>
+                        </div>
+                    </div>
+                    <div class="issue-summary-card progress">
+                        <div class="issue-summary-icon">
+                            <i data-lucide="loader"></i>
+                        </div>
+                        <div class="issue-summary-content">
+                            <div class="issue-summary-number" id="inProgressIssues">18</div>
+                            <div class="issue-summary-label">In Progress</div>
+                        </div>
+                    </div>
+                    <div class="issue-summary-card resolved">
+                        <div class="issue-summary-icon">
+                            <i data-lucide="check-circle"></i>
+                        </div>
+                        <div class="issue-summary-content">
+                            <div class="issue-summary-number" id="resolvedIssues">26</div>
+                            <div class="issue-summary-label">Resolved</div>
+                        </div>
+                    </div>
+                    <div class="issue-summary-card critical">
+                        <div class="issue-summary-icon">
+                            <i data-lucide="alert-triangle"></i>
+                        </div>
+                        <div class="issue-summary-content">
+                            <div class="issue-summary-number" id="criticalIssues">5</div>
+                            <div class="issue-summary-label">Critical</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Indicator -->
+                <div class="issues-progress-section">
+                    <div class="progress-text">
+                        <span id="resolvedThisMonth">12</span> of <span id="totalThisMonth">56</span> issues resolved
+                        this month
+                    </div>
+                    <div class="issues-progress-bar">
+                        <div class="issues-progress-fill" id="issuesProgressFill" style="width: 21%"></div>
+                    </div>
+                </div>
+
+                <!-- Filters and Controls -->
+                <div class="issues-controls">
+                    <div class="issues-filter-section">
+                        <select id="issuesCategoryFilter" class="issues-filter">
+                            <option value="">All Categories</option>
+                            <option value="data">Data Error</option>
+                            <option value="gis">GIS Layer Problem</option>
+                            <option value="access">User Access</option>
+                            <option value="performance">Performance</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <select id="issuesPriorityFilter" class="issues-filter">
+                            <option value="">All Priorities</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                        <select id="issuesStatusFilter" class="issues-filter">
+                            <option value="">All Status</option>
+                            <option value="open">Open</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="resolved">Resolved</option>
+                        </select>
+                        <input type="text" id="issuesSearch" class="issues-search" placeholder="Search issues...">
+                    </div>
+                    <div class="issues-export-section">
+                        <button class="issues-export-btn" onclick="exportIssuesCSV()">
+                            <i data-lucide="download"></i>
+                            Export CSV
+                        </button>
+                        <button class="issues-export-btn" onclick="exportAnalyticsPDF()">
+                            <i data-lucide="file-text"></i>
+                            Download PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Issues Table -->
+                <div class="issues-table-section">
+                    <table class="issues-table">
+                        <thead>
+                            <tr>
+                                <th>Issue ID</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Assigned To</th>
+                                <th>Status</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="issuesTableBody">
+                            <!-- Table rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Analytics Section -->
+                <div class="issues-analytics">
+                    <div class="issues-analytics-card">
+                        <h4>Issues by Category</h4>
+                        <canvas id="issuesCategoryChart"></canvas>
+                    </div>
+                    <div class="issues-analytics-card">
+                        <h4>Issues by Priority</h4>
+                        <canvas id="issuesPriorityChart"></canvas>
+                    </div>
+                    <div class="issues-analytics-card full-width">
+                        <h4>Issues Over Time (Last 30 Days)</h4>
+                        <canvas id="issuesTimelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback & Grievance Page -->
+            <div class="page" id="feedback-page">
+                <div class="feedback-header">
+                    <div class="feedback-title-section">
+                        <h1 class="feedback-title">FRA Feedback & Grievance Portal</h1>
+                        <p class="feedback-title-hindi">प्रतिक्रिया और शिकायत पोर्टल</p>
+                        <p class="feedback-subtitle">Voice of Citizens for Transparent Governance</p>
+                    </div>
+                </div>
+
+                <!-- Summary Bar -->
+                <div class="feedback-summary-bar">
+                    <div class="feedback-summary-item total">
+                        <div class="feedback-summary-number" id="totalFeedback">45</div>
+                        <div class="feedback-summary-label">Total Feedback<br><span class="hindi-label">कुल
+                                प्रतिक्रिया</span></div>
+                    </div>
+                    <div class="feedback-summary-item pending">
+                        <div class="feedback-summary-number" id="pendingFeedback">12</div>
+                        <div class="feedback-summary-label">Pending<br><span class="hindi-label">लंबित</span></div>
+                    </div>
+                    <div class="feedback-summary-item resolved">
+                        <div class="feedback-summary-number" id="resolvedFeedback">28</div>
+                        <div class="feedback-summary-label">Resolved<br><span class="hindi-label">हल किया गया</span>
+                        </div>
+                    </div>
+                    <div class="feedback-summary-item progress">
+                        <div class="feedback-summary-number" id="inProgressFeedback">5</div>
+                        <div class="feedback-summary-label">In Progress<br><span class="hindi-label">प्रगति में</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Citizen Feedback Form -->
+                <div class="feedback-form-section">
+                    <div class="feedback-form-header">
+                        <h3>Submit Feedback / प्रतिक्रिया सबमिट करें</h3>
+                        <button class="toggle-form-btn" id="toggleFormBtn" onclick="toggleFeedbackForm()">
+                            <i data-lucide="plus"></i>
+                            New Feedback
+                        </button>
+                    </div>
+                    <div class="feedback-form-container" id="feedbackFormContainer" style="display: none;">
+                        <form id="feedbackForm" class="feedback-form">
+                            <div class="feedback-form-grid">
+                                <div class="feedback-form-group">
+                                    <label for="feedbackName">Name / नाम *</label>
+                                    <input type="text" id="feedbackName" name="name" required>
+                                </div>
+                                <div class="feedback-form-group">
+                                    <label for="feedbackClaimId">Claim ID / दावा आईडी *</label>
+                                    <select id="feedbackClaimId" name="claimId" required>
+                                        <option value="">Select Claim / दावा चुनें</option>
+                                        <option value="FRA2025-JH-001">FRA2025-JH-001</option>
+                                        <option value="FRA2025-JH-002">FRA2025-JH-002</option>
+                                        <option value="FRA2025-JH-003">FRA2025-JH-003</option>
+                                        <option value="FRA2025-JH-004">FRA2025-JH-004</option>
+                                    </select>
+                                </div>
+                                <div class="feedback-form-group">
+                                    <label for="feedbackCategory">Category / श्रेणी *</label>
+                                    <select id="feedbackCategory" name="category" required>
+                                        <option value="">Select Category / श्रेणी चुनें</option>
+                                        <option value="delay">Delay in Approval / अनुमोदन में देरी</option>
+                                        <option value="document">Document Issue / दस्तावेज़ समस्या</option>
+                                        <option value="map">Map Error / मानचित्र त्रुटि</option>
+                                        <option value="other">Other / अन्य</option>
+                                    </select>
+                                </div>
+                                <div class="feedback-form-group">
+                                    <label for="feedbackDistrict">District / जिला *</label>
+                                    <select id="feedbackDistrict" name="district" required>
+                                        <option value="">Select District / जिला चुनें</option>
+                                        <option value="ranchi">Ranchi / रांची</option>
+                                        <option value="dhanbad">Dhanbad / धनबाद</option>
+                                        <option value="hazaribagh">Hazaribagh / हजारीबाग</option>
+                                        <option value="koderma">Koderma / कोडरमा</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="feedback-form-group full-width">
+                                <label for="feedbackDescription">Description / विवरण * (Max 500 characters)</label>
+                                <textarea id="feedbackDescription" name="description" rows="4" maxlength="500" required
+                                    placeholder="Please describe your feedback or grievance..."></textarea>
+                                <div class="char-counter"><span id="charCount">0</span>/500</div>
+                            </div>
+                            <div class="feedback-form-group full-width">
+                                <label for="feedbackAttachment">Upload Attachment / अनुलग्नक अपलोड करें
+                                    (Optional)</label>
+                                <div class="feedback-file-upload"
+                                    onclick="document.getElementById('feedbackAttachment').click()">
+                                    <i data-lucide="upload"></i>
+                                    <span>Click to upload PDF or Image / पीडीएफ या छवि अपलोड करें</span>
+                                    <input type="file" id="feedbackAttachment" name="attachment"
+                                        accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                                </div>
+                                <div id="feedbackFileName" class="feedback-uploaded-file"></div>
+                            </div>
+                            <div class="feedback-form-actions">
+                                <button type="button" class="feedback-btn secondary"
+                                    onclick="toggleFeedbackForm()">Cancel / रद्द करें</button>
+                                <button type="submit" class="feedback-btn primary">Submit Feedback / सबमिट करें</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Filters and Controls -->
+                <div class="feedback-controls">
+                    <div class="feedback-filter-section">
+                        <select id="feedbackStatusFilter" class="feedback-filter">
+                            <option value="">All Status / सभी स्थिति</option>
+                            <option value="pending">Pending / लंबित</option>
+                            <option value="in-progress">In Progress / प्रगति में</option>
+                            <option value="resolved">Resolved / हल किया गया</option>
+                            <option value="rejected">Rejected / अस्वीकृत</option>
+                        </select>
+                        <select id="feedbackCategoryFilter" class="feedback-filter">
+                            <option value="">All Categories / सभी श्रेणियां</option>
+                            <option value="delay">Delay in Approval</option>
+                            <option value="document">Document Issue</option>
+                            <option value="map">Map Error</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <select id="feedbackDistrictFilter" class="feedback-filter">
+                            <option value="">All Districts / सभी जिले</option>
+                            <option value="ranchi">Ranchi</option>
+                            <option value="dhanbad">Dhanbad</option>
+                            <option value="hazaribagh">Hazaribagh</option>
+                            <option value="koderma">Koderma</option>
+                        </select>
+                    </div>
+                    <button class="feedback-export-btn" onclick="exportFeedbackData()">
+                        <i data-lucide="download"></i>
+                        Export CSV
+                    </button>
+                </div>
+
+                <!-- Feedback Table -->
+                <div class="feedback-table-section">
+                    <table class="feedback-table">
+                        <thead>
+                            <tr>
+                                <th>Feedback ID</th>
+                                <th>Claim ID</th>
+                                <th>User Name</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feedbackTableBody">
+                            <!-- Table rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Analytics Section -->
+                <div class="feedback-analytics">
+                    <div class="analytics-chart-card">
+                        <h4>Feedback by Category / श्रेणी के अनुसार प्रतिक्रिया</h4>
+                        <canvas id="feedbackCategoryChart"></canvas>
+                    </div>
+                    <div class="analytics-chart-card">
+                        <h4>Monthly Feedback Volume / मासिक प्रतिक्रिया मात्रा</h4>
+                        <canvas id="feedbackVolumeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assets Mapping Page -->
+            <div class="page" id="assets-page">
+                <div class="assets-header">
+                    <div class="assets-title-section">
+                        <h1 class="assets-title">FRA Asset Mapping & Geo Intelligence</h1>
+                        <p class="assets-subtitle">Visualizing community and natural assets for FRA-holding villages</p>
+                    </div>
+                </div>
+
+                <!-- AI Detection Summary Cards -->
+                <div class="assets-summary">
+                    <div class="asset-summary-card total">
+                        <div class="asset-summary-icon">
+                            <i data-lucide="map"></i>
+                        </div>
+                        <div class="asset-summary-content">
+                            <div class="asset-summary-number" id="totalAssets">127</div>
+                            <div class="asset-summary-label">Total Assets Detected</div>
+                        </div>
+                    </div>
+                    <div class="asset-summary-card water">
+                        <div class="asset-summary-icon">
+                            <i data-lucide="waves"></i>
+                        </div>
+                        <div class="asset-summary-content">
+                            <div class="asset-summary-number" id="waterBodies">23</div>
+                            <div class="asset-summary-label">Water Bodies Count</div>
+                        </div>
+                    </div>
+                    <div class="asset-summary-card agriculture">
+                        <div class="asset-summary-icon">
+                            <i data-lucide="wheat"></i>
+                        </div>
+                        <div class="asset-summary-content">
+                            <div class="asset-summary-number" id="agricultureFields">45</div>
+                            <div class="asset-summary-label">Agricultural Fields Count</div>
+                        </div>
+                    </div>
+                    <div class="asset-summary-card forest">
+                        <div class="asset-summary-icon">
+                            <i data-lucide="trees"></i>
+                        </div>
+                        <div class="asset-summary-content">
+                            <div class="asset-summary-number" id="forestArea">342</div>
+                            <div class="asset-summary-label">Forest Cover Area (ha)</div>
+                        </div>
+                    </div>
+                    <div class="asset-summary-card infrastructure">
+                        <div class="asset-summary-icon">
+                            <i data-lucide="building"></i>
+                        </div>
+                        <div class="asset-summary-content">
+                            <div class="asset-summary-number" id="infrastructureSites">18</div>
+                            <div class="asset-summary-label">Infrastructure Sites Count</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Detection Accuracy -->
+                <div class="ai-detection-panel">
+                    <div class="ai-accuracy-section">
+                        <div class="ai-accuracy-info">
+                            <span class="ai-accuracy-label">AI Detection Accuracy</span>
+                            <span class="ai-accuracy-value">92%</span>
+                        </div>
+                        <div class="ai-accuracy-bar">
+                            <div class="ai-accuracy-fill" style="width: 92%"></div>
+                        </div>
+                        <p class="ai-detection-note">Assets mapped using remote sensing and AI-assisted classification
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Filters and Controls -->
+                <div class="assets-controls">
+                    <div class="assets-filter-section">
+                        <select id="assetsStateFilter" class="assets-filter">
+                            <option value="">All States</option>
+                            <option value="jharkhand">Jharkhand</option>
+                            <option value="odisha">Odisha</option>
+                            <option value="chhattisgarh">Chhattisgarh</option>
+                        </select>
+                        <select id="assetsDistrictFilter" class="assets-filter">
+                            <option value="">All Districts</option>
+                            <option value="ranchi">Ranchi</option>
+                            <option value="dhanbad">Dhanbad</option>
+                            <option value="hazaribagh">Hazaribagh</option>
+                            <option value="koderma">Koderma</option>
+                        </select>
+                        <select id="assetsVillageFilter" class="assets-filter">
+                            <option value="">All Villages</option>
+                            <option value="jharia">Jharia</option>
+                            <option value="koderma">Koderma</option>
+                            <option value="hazaribagh">Hazaribagh</option>
+                            <option value="ranchi">Ranchi</option>
+                        </select>
+                        <select id="assetsTypeFilter" class="assets-filter">
+                            <option value="">All Asset Types</option>
+                            <option value="water">Water Bodies</option>
+                            <option value="agriculture">Agricultural Land</option>
+                            <option value="forest">Forest Area</option>
+                            <option value="infrastructure">Infrastructure</option>
+                        </select>
+                    </div>
+                    <div class="loading-indicator" id="assetsLoading" style="display: none;">
+                        <i data-lucide="loader-2"></i>
+                        <span>Loading assets...</span>
+                    </div>
+                </div>
+
+                <!-- Main Content Layout -->
+                <div class="assets-layout">
+                    <!-- Map and Layer Controls -->
+                    <div class="assets-map-section">
+                        <!-- Layer Controls -->
+                        <div class="assets-layer-panel">
+                            <h4>Asset Layers</h4>
+                            <div class="asset-layer-controls">
+                                <div class="asset-layer-item">
+                                    <label class="asset-layer-toggle">
+                                        <input type="checkbox" id="waterAssetsLayer" checked>
+                                        <span class="asset-toggle-slider water"></span>
+                                        <span class="asset-layer-label">
+                                            <span class="asset-layer-color water"></span>
+                                            Water Bodies
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="asset-layer-item">
+                                    <label class="asset-layer-toggle">
+                                        <input type="checkbox" id="agricultureAssetsLayer" checked>
+                                        <span class="asset-toggle-slider agriculture"></span>
+                                        <span class="asset-layer-label">
+                                            <span class="asset-layer-color agriculture"></span>
+                                            Agricultural Land
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="asset-layer-item">
+                                    <label class="asset-layer-toggle">
+                                        <input type="checkbox" id="forestAssetsLayer" checked>
+                                        <span class="asset-toggle-slider forest"></span>
+                                        <span class="asset-layer-label">
+                                            <span class="asset-layer-color forest"></span>
+                                            Forest Area
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="asset-layer-item">
+                                    <label class="asset-layer-toggle">
+                                        <input type="checkbox" id="infrastructureAssetsLayer" checked>
+                                        <span class="asset-toggle-slider infrastructure"></span>
+                                        <span class="asset-layer-label">
+                                            <span class="asset-layer-color infrastructure"></span>
+                                            Infrastructure
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Map Container -->
+                        <div class="assets-map-container">
+                            <div id="assetsMapContainer" class="assets-map"></div>
+                        </div>
+                    </div>
+
+                    <!-- DSS Integration Panel -->
+                    <div class="dss-panel">
+                        <h4>Schemes Recommended</h4>
+                        <p class="dss-subtitle">Based on Asset Availability</p>
+                        <div class="dss-recommendations" id="dssRecommendations">
+                            <!-- Recommendations will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assets Data Table -->
+                <div class="assets-table-section">
+                    <div class="assets-table-header">
+                        <h3>Assets Inventory</h3>
+                        <button class="assets-export-btn" onclick="exportAssetsData()">
+                            <i data-lucide="download"></i>
+                            Download CSV
+                        </button>
+                    </div>
+                    <div class="assets-table-container">
+                        <table class="assets-table">
+                            <thead>
+                                <tr>
+                                    <th>Asset ID</th>
+                                    <th>Type</th>
+                                    <th>Village</th>
+                                    <th>Area (ha)</th>
+                                    <th>Coordinates</th>
+                                    <th>Linked Claim ID</th>
+                                    <th>AI Accuracy %</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assetsTableBody">
+                                <!-- Table rows will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Workflow Page -->
+            <div class="page" id="review-page">
+                <div class="review-header">
+                    <div class="review-title-section">
+                        <h1 class="review-title">Claim Review & Verification Portal</h1>
+                        <p class="review-subtitle">District and State-Level Workflow for FRA Title Approval</p>
+                    </div>
+                    <div class="automation-banner">
+                        <i data-lucide="settings"></i>
+                        <span>Automated Workflow Active — AI Verified claims (>80%) prioritized for review</span>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="review-progress">
+                    <div class="progress-info">
+                        <span>District Claims Reviewed This Month</span>
+                        <span class="progress-percentage" id="reviewProgress">68%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 68%"></div>
+                    </div>
+                </div>
+
+                <!-- Analytics Cards -->
+                <div class="review-analytics">
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i data-lucide="eye"></i>
+                        </div>
+                        <div class="analytics-content">
+                            <div class="analytics-number" id="totalUnderReview">24</div>
+                            <div class="analytics-label">Total Claims Under Review</div>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i data-lucide="check-circle-2"></i>
+                        </div>
+                        <div class="analytics-content">
+                            <div class="analytics-number" id="aiVerifiedPercent">72%</div>
+                            <div class="analytics-label">AI Verified Claims (%)</div>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i data-lucide="clock"></i>
+                        </div>
+                        <div class="analytics-content">
+                            <div class="analytics-number" id="avgReviewTime">3.2</div>
+                            <div class="analytics-label">Average Review Time (Days)</div>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i data-lucide="trending-up"></i>
+                        </div>
+                        <div class="analytics-content">
+                            <div class="analytics-number" id="approvedThisWeek">18</div>
+                            <div class="analytics-label">Total Approved This Week</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters and Controls -->
+                <div class="review-controls">
+                    <div class="filter-section">
+                        <select id="reviewStateFilter" class="review-filter">
+                            <option value="">All States</option>
+                            <option value="jharkhand">Jharkhand</option>
+                            <option value="odisha">Odisha</option>
+                            <option value="chhattisgarh">Chhattisgarh</option>
+                        </select>
+                        <select id="reviewDistrictFilter" class="review-filter">
+                            <option value="">All Districts</option>
+                            <option value="ranchi">Ranchi</option>
+                            <option value="dhanbad">Dhanbad</option>
+                            <option value="hazaribagh">Hazaribagh</option>
+                            <option value="koderma">Koderma</option>
+                        </select>
+                        <select id="reviewStatusFilter" class="review-filter">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="district-review">District Review</option>
+                            <option value="state-review">State Review</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="view-toggle">
+                        <button class="toggle-btn active" id="districtViewBtn" onclick="switchView('district')">District
+                            View</button>
+                        <button class="toggle-btn" id="stateViewBtn" onclick="switchView('state')">State View</button>
+                    </div>
+                </div>
+
+                <!-- Review Table -->
+                <div class="review-table-container">
+                    <table class="review-table">
+                        <thead>
+                            <tr>
+                                <th>Claim ID</th>
+                                <th>Applicant Name</th>
+                                <th>Village</th>
+                                <th>AI Score (%)</th>
+                                <th>Claim Type</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewTableBody">
+                            <!-- Table rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Claims Management Page -->
+            <div class="page" id="claims-page">
+                <div class="claims-header">
+                    <div class="claims-title-section">
+                        <h1 class="claims-title">FRA Claims Management System</h1>
+                        <p class="claims-subtitle">Track, Verify, and Approve Forest Rights Act Claims</p>
+                    </div>
+                    <button class="new-claim-btn" onclick="openNewClaimForm()">
+                        <i data-lucide="plus"></i>
+                        New Claim
+                    </button>
+                </div>
+
+                <!-- Dashboard Summary Cards -->
+                <div class="claims-summary">
+                    <div class="summary-card total" onclick="filterClaimsByStatus('')">
+                        <div class="summary-icon">
+                            <i data-lucide="file-text"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="totalClaimsCount">15</div>
+                            <div class="summary-label">Total Claims</div>
+                        </div>
+                    </div>
+                    <div class="summary-card approved" onclick="filterClaimsByStatus('approved')">
+                        <div class="summary-icon">
+                            <i data-lucide="check-circle"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="approvedClaimsCount">8</div>
+                            <div class="summary-label">Approved</div>
+                        </div>
+                    </div>
+                    <div class="summary-card pending" onclick="filterClaimsByStatus('pending')">
+                        <div class="summary-icon">
+                            <i data-lucide="clock"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="pendingClaimsCount">5</div>
+                            <div class="summary-label">Pending</div>
+                        </div>
+                    </div>
+                    <div class="summary-card rejected" onclick="filterClaimsByStatus('rejected')">
+                        <div class="summary-icon">
+                            <i data-lucide="x-circle"></i>
+                        </div>
+                        <div class="summary-content">
+                            <div class="summary-number" id="rejectedClaimsCount">2</div>
+                            <div class="summary-label">Rejected</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters and Search -->
+                <div class="claims-controls">
+                    <div class="filter-section">
+                        <select id="districtClaimsFilter" class="claims-filter">
+                            <option value="">All Districts</option>
+                            <option value="ranchi">Ranchi</option>
+                            <option value="dhanbad">Dhanbad</option>
+                            <option value="hazaribagh">Hazaribagh</option>
+                            <option value="koderma">Koderma</option>
+                        </select>
+                        <select id="statusClaimsFilter" class="claims-filter">
+                            <option value="">All Status</option>
+                            <option value="approved">Approved</option>
+                            <option value="pending">Pending</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="under-review">Under Review</option>
+                        </select>
+                        <select id="typeClaimsFilter" class="claims-filter">
+                            <option value="">All Types</option>
+                            <option value="IFR">IFR</option>
+                            <option value="CFR">CFR</option>
+                            <option value="CR">CR</option>
+                        </select>
+                    </div>
+                    <div class="search-section">
+                        <div class="claims-search-box">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="claimsSearch" placeholder="Search by Claim ID or Applicant Name">
+                        </div>
+                        <button class="export-btn" onclick="exportClaims()">
+                            <i data-lucide="download"></i>
+                            Export CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Claims Table -->
+                <div class="claims-table-container">
+                    <table class="claims-table">
+                        <thead>
+                            <tr>
+                                <th>Claim ID</th>
+                                <th>Applicant Name</th>
+                                <th>Village</th>
+                                <th>District</th>
+                                <th>Area (ha)</th>
+                                <th>Claim Type</th>
+                                <th>AI Score (%)</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="claimsTableBody">
+                            <!-- Table rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Role Change Authentication Modal -->
+    <div id="roleChangeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i data-lucide="lock"></i> Authentication Required</h3>
+                <button class="modal-close" onclick="closeRoleChangeModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Please enter your credentials to change role to <strong id="targetRoleName"></strong></p>
+                <form id="roleChangeForm" onsubmit="authenticateRoleChange(event)">
+                    <div class="form-group">
+                        <label><i data-lucide="user"></i> Login ID / Email</label>
+                        <input type="text" id="roleLoginId" placeholder="Enter your login ID" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i data-lucide="key"></i> Password</label>
+                        <input type="password" id="rolePassword" placeholder="Enter your password" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="modal-btn secondary" onclick="closeRoleChangeModal()">Cancel</button>
+                        <button type="submit" class="modal-btn primary">
+                            <i data-lucide="check"></i> Authenticate & Change Role
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Claim Form Modal -->
+    <div id="newClaimModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Submit New FRA Claim</h3>
+                <button class="modal-close" onclick="closeNewClaimForm()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="newClaimForm" class="claim-form">
+                    <!-- Aadhaar Verification Section -->
+                    <div class="aadhaar-verification-section">
+                        <h4><i data-lucide="shield-check"></i> Aadhaar Verification (Required)</h4>
+                        <div class="aadhaar-input-group">
+                            <div class="form-group">
+                                <label for="aadhaarNumber">Aadhaar Number *</label>
+                                <input type="text" id="aadhaarNumber" name="aadhaarNumber" 
+                                       placeholder="Enter 12-digit Aadhaar" 
+                                       maxlength="12" 
+                                       pattern="[0-9]{12}"
+                                       required>
+                                <small class="input-hint">Enter your 12-digit Aadhaar number</small>
+                            </div>
+                            <button type="button" class="btn-verify-aadhaar" id="btnVerifyAadhaar" onclick="verifyAadhaarNumber()">
+                                <i data-lucide="check-circle"></i>
+                                <span>Verify Aadhaar</span>
+                            </button>
+                        </div>
+                        <div id="aadhaarVerificationStatus" class="verification-status" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="applicantName">Applicant Name *</label>
+                            <input type="text" id="applicantName" name="applicantName" required readonly>
+                            <small class="input-hint">Auto-filled from Aadhaar</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="villageName">Village Name *</label>
+                            <input type="text" id="villageName" name="villageName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="claimState">State *</label>
+                            <select id="claimState" name="state" required>
+                                <option value="">Loading states...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="claimDistrict">District *</label>
+                            <select id="claimDistrict" name="district" required disabled>
+                                <option value="">Select State First</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="claimType">Claim Type *</label>
+                            <select id="claimType" name="claimType" required>
+                                <option value="">Select Type</option>
+                                <option value="IFR">Individual Forest Rights (IFR)</option>
+                                <option value="CFR">Community Forest Rights (CFR)</option>
+                                <option value="CR">Community Rights (CR)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="landArea">Land Area (hectares) *</label>
+                            <input type="number" id="landArea" name="landArea" step="0.1" min="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="latitude">Latitude *</label>
+                            <input type="number" id="latitude" name="latitude" step="0.000001" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="longitude">Longitude *</label>
+                            <input type="number" id="longitude" name="longitude" step="0.000001" required>
+                        </div>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="documentUpload">Upload FRA Document *</label>
+                        <div class="file-upload-area" onclick="document.getElementById('documentUpload').click()">
+                            <i data-lucide="upload"></i>
+                            <span>Click to upload PDF or Image file</span>
+                            <input type="file" id="documentUpload" name="document" accept=".pdf,.jpg,.jpeg,.png"
+                                required style="display: none;">
+                        </div>
+                        <div id="uploadedFileName" class="uploaded-file"></div>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="remarks">Remarks (Optional)</label>
+                        <textarea id="remarks" name="remarks" rows="3"
+                            placeholder="Additional information or notes"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn secondary" onclick="closeNewClaimForm()">Cancel</button>
+                        <button type="submit" class="btn primary">Submit Claim</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Claim Details Modal -->
+    <div id="claimDetailsModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Claim Details</h3>
+                <button class="modal-close" onclick="closeClaimDetailsModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="claimDetailsBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Review Panel Modal -->
+    <div id="reviewPanelModal" class="modal">
+        <div class="modal-content extra-large">
+            <div class="modal-header">
+                <h3 id="reviewPanelTitle">Detailed Claim Review</h3>
+                <button class="modal-close" onclick="closeReviewPanel()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="reviewPanelBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Field Verification Scheduler Modal -->
+    <div id="fieldVerificationModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Schedule Field Verification</h3>
+                <button class="modal-close" onclick="closeFieldVerificationScheduler()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="fieldVerificationForm" onsubmit="submitFieldVerification(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="verificationDate">Verification Date *</label>
+                            <input type="date" id="verificationDate" name="verificationDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="verificationTime">Verification Time *</label>
+                            <input type="time" id="verificationTime" name="verificationTime" required>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="teamLead">Team Lead *</label>
+                            <select id="teamLead" name="teamLead" required>
+                                <option value="">Select Team Lead</option>
+                                <option value="officer1">Rajesh Kumar - District Officer</option>
+                                <option value="officer2">Priya Singh - Field Inspector</option>
+                                <option value="officer3">Amit Sharma - Senior Verifier</option>
+                                <option value="officer4">Sunita Devi - Field Coordinator</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="teamMembers">Team Members (Select multiple)</label>
+                            <select id="teamMembers" name="teamMembers" multiple size="4">
+                                <option value="member1">Mohan Lal - Field Assistant</option>
+                                <option value="member2">Kavita Yadav - Surveyor</option>
+                                <option value="member3">Arjun Verma - Technical Officer</option>
+                                <option value="member4">Geeta Kumari - Documentation Officer</option>
+                                <option value="member5">Ramesh Prasad - GIS Specialist</option>
+                            </select>
+                            <small>Hold Ctrl/Cmd to select multiple members</small>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="verificationPurpose">Verification Purpose *</label>
+                            <select id="verificationPurpose" name="verificationPurpose" required>
+                                <option value="">Select Purpose</option>
+                                <option value="land-verification">Land Boundary Verification</option>
+                                <option value="document-verification">Document Verification</option>
+                                <option value="beneficiary-verification">Beneficiary Verification</option>
+                                <option value="site-inspection">Site Inspection</option>
+                                <option value="comprehensive">Comprehensive Verification</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label for="verificationNotes">Special Instructions</label>
+                            <textarea id="verificationNotes" name="verificationNotes" rows="3" placeholder="Enter any special instructions for the field team..."></textarea>
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label>
+                                <input type="checkbox" id="notifyTeam" name="notifyTeam" checked>
+                                Send notification to team members
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" onclick="closeFieldVerificationScheduler()">Cancel</button>
+                        <button type="submit" class="btn-primary">
+                            <i data-lucide="calendar-check"></i>
+                            Schedule Verification
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Action Confirmation Modal -->
+    <div id="reviewActionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="reviewActionTitle">Confirm Review Action</h3>
+                <button class="modal-close" onclick="closeReviewActionModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="reviewActionMessage">Are you sure you want to perform this action?</p>
+                <div class="review-reason-section" id="reviewReasonSection" style="display: none;">
+                    <label for="reviewReason">Reason for Action:</label>
+                    <textarea id="reviewReason" placeholder="Please provide a reason for this action..."
+                        rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" onclick="closeReviewActionModal()">Cancel</button>
+                    <button class="modal-btn primary" id="confirmReviewActionBtn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Confirmation Modal -->
+    <div id="actionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="actionModalTitle">Confirm Action</h3>
+                <button class="modal-close" onclick="closeActionModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="actionModalMessage">Are you sure you want to perform this action?</p>
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" onclick="closeActionModal()">Cancel</button>
+                    <button class="modal-btn primary" id="confirmActionBtn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DSS Eligibility Details Modal -->
+    <div id="dssEligibilityModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Eligibility Details & AI Logic</h3>
+                <button class="modal-close" onclick="closeDSSEligibilityModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="dssEligibilityBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New User</h3>
+                <button class="modal-close" onclick="closeAddUserForm()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addUserForm" class="admin-form">
+                    <div class="admin-form-grid">
+                        <div class="admin-form-group">
+                            <label for="userName">Full Name *</label>
+                            <input type="text" id="userName" name="name" required>
+                        </div>
+                        <div class="admin-form-group">
+                            <label for="userEmail">Email *</label>
+                            <input type="email" id="userEmail" name="email" required>
+                        </div>
+                        <div class="admin-form-group">
+                            <label for="userPhone">Phone (Optional)</label>
+                            <input type="tel" id="userPhone" name="phone">
+                        </div>
+                        <div class="admin-form-group">
+                            <label for="userPassword">Password *</label>
+                            <input type="password" id="userPassword" name="password" required>
+                        </div>
+                        <div class="admin-form-group">
+                            <label for="userRole">Assign Role *</label>
+                            <select id="userRole" name="role" required>
+                                <option value="">Select Role</option>
+                                <option value="citizen">Citizen</option>
+                                <option value="district">District Officer</option>
+                                <option value="state">State Officer</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="admin-form-group">
+                            <label for="userDistrict">Assign District/State</label>
+                            <select id="userDistrict" name="district">
+                                <option value="">Select District</option>
+                                <option value="ranchi">Ranchi</option>
+                                <option value="dhanbad">Dhanbad</option>
+                                <option value="hazaribagh">Hazaribagh</option>
+                                <option value="koderma">Koderma</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="admin-form-actions">
+                        <button type="button" class="admin-btn secondary" onclick="closeAddUserForm()">Cancel</button>
+                        <button type="submit" class="admin-btn primary">Create User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit User</h3>
+                <button class="modal-close" onclick="closeEditUserModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="editUserBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- New Issue Form Modal -->
+    <div id="newIssueModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Report New Issue</h3>
+                <button class="modal-close" onclick="closeNewIssueForm()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="newIssueForm" class="issue-form">
+                    <div class="issue-form-grid">
+                        <div class="issue-form-group full-width">
+                            <label for="issueTitle">Issue Title *</label>
+                            <input type="text" id="issueTitle" name="title" required>
+                        </div>
+                        <div class="issue-form-group">
+                            <label for="issueCategory">Category *</label>
+                            <select id="issueCategory" name="category" required>
+                                <option value="">Select Category</option>
+                                <option value="data">Data Error</option>
+                                <option value="gis">GIS Layer Problem</option>
+                                <option value="access">User Access</option>
+                                <option value="performance">Performance</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="issue-form-group">
+                            <label for="issuePriority">Priority *</label>
+                            <select id="issuePriority" name="priority" required>
+                                <option value="">Select Priority</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <div class="issue-form-group">
+                            <label for="issueAssignedTo">Assigned To *</label>
+                            <select id="issueAssignedTo" name="assignedTo" required>
+                                <option value="">Select Officer</option>
+                                <option value="District Officer">District Officer</option>
+                                <option value="State Officer">State Officer</option>
+                                <option value="Technical Team">Technical Team</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="issue-form-group">
+                            <label for="issueDistrict">District</label>
+                            <select id="issueDistrict" name="district">
+                                <option value="">Select District</option>
+                                <option value="ranchi">Ranchi</option>
+                                <option value="dhanbad">Dhanbad</option>
+                                <option value="hazaribagh">Hazaribagh</option>
+                                <option value="koderma">Koderma</option>
+                            </select>
+                        </div>
+                        <div class="issue-form-group full-width">
+                            <label for="issueDescription">Description * (Max 500 characters)</label>
+                            <textarea id="issueDescription" name="description" rows="4" maxlength="500"
+                                required></textarea>
+                            <div class="issue-char-counter"><span id="issueCharCount">0</span>/500</div>
+                        </div>
+                        <div class="issue-form-group full-width">
+                            <label for="issueAttachment">Attachment (Optional)</label>
+                            <div class="issue-file-upload" onclick="document.getElementById('issueAttachment').click()">
+                                <i data-lucide="upload"></i>
+                                <span>Click to upload PDF or Image</span>
+                                <input type="file" id="issueAttachment" name="attachment" accept=".pdf,.jpg,.jpeg,.png"
+                                    style="display: none;">
+                            </div>
+                            <div id="issueFileName" class="issue-uploaded-file"></div>
+                        </div>
+                    </div>
+                    <div class="issue-form-actions">
+                        <button type="button" class="issue-btn secondary" onclick="closeNewIssueForm()">Cancel</button>
+                        <button type="submit" class="issue-btn primary">Submit Issue</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Issue Details Modal -->
+    <div id="issueDetailsModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="issueDetailsTitle">Issue Details</h3>
+                <button class="modal-close" onclick="closeIssueDetailsModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="issueDetailsBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Details Modal -->
+    <div id="feedbackDetailsModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="feedbackDetailsTitle">Feedback Details</h3>
+                <button class="modal-close" onclick="closeFeedbackDetailsModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="feedbackDetailsBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Success Modal -->
+    <div id="feedbackSuccessModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Feedback Submitted Successfully!</h3>
+                <button class="modal-close" onclick="closeFeedbackSuccessModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="success-message">
+                    <i data-lucide="check-circle" style="width: 3rem; height: 3rem; color: #10b981;"></i>
+                    <p>Your feedback has been submitted successfully.</p>
+                    <p class="hindi-text">आपकी प्रतिक्रिया सफलतापूर्वक सबमिट कर दी गई है।</p>
+                    <div class="feedback-id-display">
+                        <strong>Feedback ID:</strong>
+                        <span id="generatedFeedbackId"></span>
+                    </div>
+                    <p class="note-text">You will receive updates on your registered contact.</p>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn primary" onclick="closeFeedbackSuccessModal()">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset Details Modal -->
+    <div id="assetDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="assetDetailsTitle">Asset Details</h3>
+                <button class="modal-close" onclick="closeAssetDetailsModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="assetDetailsBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Claim Details Modal -->
+    <div id="claimModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Claim Details</h3>
+                <button class="modal-close" onclick="closeClaimModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Claim Form Modal -->
+    <div id="claimFormModal" class="modal" style="display: none;">
+        <div class="modal-content claim-form-modal">
+            <div class="modal-header">
+                <h2>📋 New FRA Claim</h2>
+                <span class="close" onclick="closeClaimForm()">&times;</span>
+            </div>
+            <form id="claimForm" onsubmit="handleClaimFormSubmit(event)">
+                <!-- Aadhaar Verification Section -->
+                <div class="aadhaar-verification-section">
+                    <h4><i data-lucide="shield-check"></i> Aadhaar Verification (Required)</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="drawClaimAadhaar">Aadhaar Number <span class="required">*</span></label>
+                            <input type="text" id="drawClaimAadhaar" name="aadhaar_number" 
+                                   placeholder="Enter 12-digit Aadhaar" 
+                                   maxlength="12" 
+                                   pattern="[0-9]{12}"
+                                   required>
+                            <span class="input-hint">Enter your 12-digit Aadhaar number</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="mobileNumber">Mobile Number <span class="required">*</span></label>
+                            <input type="tel" id="mobileNumber" name="mobile_number" 
+                                   placeholder="Enter 10-digit mobile" 
+                                   maxlength="10" 
+                                   pattern="[0-9]{10}"
+                                   required>
+                            <span class="input-hint">Enter your 10-digit mobile number</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-verify-aadhaar" id="btnVerifyDrawAadhaar" onclick="verifyDrawClaimAadhaar()">
+                        <i data-lucide="check-circle"></i>
+                        <span>Verify Aadhaar</span>
+                    </button>
+                    <div id="drawAadhaarVerificationStatus" class="verification-status" style="display: none;"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="claimantName">Claimant Name <span class="required">*</span></label>
+                        <input type="text" id="claimantName" name="claimant_name" 
+                               placeholder="Auto-filled from Aadhaar" required minlength="3" readonly>
+                        <span class="input-hint">Auto-filled from Aadhaar verification</span>
+                        <span class="error-message" id="claimantNameError"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="claimType">Claim Type <span class="required">*</span></label>
+                        <select id="claimType" name="claim_type" required>
+                            <option value="">Select Type</option>
+                            <option value="IFR">Individual Forest Rights (IFR)</option>
+                            <option value="CFR">Community Forest Rights (CFR)</option>
+                            <option value="CR">Community Rights (CR)</option>
+                        </select>
+                        <span class="error-message" id="claimTypeError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="linkedScheme">Linked Scheme (Optional)</label>
+                        <select id="linkedScheme" name="linked_scheme">
+                            <option value="">None</option>
+                            <option value="PM-KISAN">PM-KISAN</option>
+                            <option value="MGNREGA">MGNREGA</option>
+                            <option value="DAJGUA">DAJGUA</option>
+                            <option value="Jal Jeevan Mission">Jal Jeevan Mission</option>
+                            <option value="PMAY">Pradhan Mantri Awas Yojana (PMAY)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="stateInput">State <span class="required">*</span></label>
+                        <input type="text" id="stateInput" name="state" 
+                               readonly required>
+                        <span class="info-message">Auto-filled from map location</span>
+                        <span class="error-message" id="stateError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="districtInput">District <span class="required">*</span></label>
+                        <input type="text" id="districtInput" name="district" 
+                               readonly required>
+                        <span class="info-message">Auto-filled from map location</span>
+                        <span class="error-message" id="districtError"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="villageInput">Village <span class="required">*</span></label>
+                        <input type="text" id="villageInput" name="village" 
+                               readonly required>
+                        <span class="info-message">Auto-filled from map location</span>
+                        <span class="error-message" id="villageError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="areaInput">Area (Hectares) <span class="required">*</span></label>
+                        <input type="number" id="areaInput" name="area_ha" 
+                               step="0.01" readonly required>
+                        <span class="info-message" id="areaInfo"></span>
+                        <span class="warning-message" id="areaWarning"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="latitudeInput">Latitude</label>
+                        <input type="number" id="latitudeInput" name="latitude" 
+                               step="0.000001" readonly>
+                        <span class="info-message" id="latitudeInfo">Center of polygon</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="longitudeInput">Longitude</label>
+                        <input type="number" id="longitudeInput" name="longitude" 
+                               step="0.000001" readonly>
+                        <span class="info-message" id="longitudeInfo">Center of polygon</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="documentUpload">Upload Document (Optional)</label>
+                        <input type="file" id="documentUpload" name="document" 
+                               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                        <span class="info-message" id="documentInfo">Supported: PDF, JPG, PNG, DOC (Max 5MB)</span>
+                        <span class="success-message" id="documentSuccess" style="display: none;"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="claimNotes">Additional Notes (Optional)</label>
+                        <textarea id="claimNotes" name="notes" rows="3" 
+                                  placeholder="Enter any additional information about this claim" 
+                                  maxlength="500"></textarea>
+                        <span class="char-count" id="notesCharCount">0 / 500</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeClaimForm()">
+                        <i data-lucide="x"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn-primary" id="submitClaimBtn">
+                        <i data-lucide="check"></i> Submit Claim
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="assets/js/api.js?v=4"></script>
+    <script src="assets/js/script.js?v=4"></script>
+    <script src="assets/js/enhanced-pdf.js?v=4"></script>
+    <script src="assets/js/sms-approval.js?v=4"></script>
+    <script src="assets/js/asset-notification.js?v=4"></script>
+    <script src="assets/js/chatbot-map-integration.js?v=3"></script>
+    <script src="assets/js/chatbot.js?v=3"></script>
+</body>
+
+</html>
